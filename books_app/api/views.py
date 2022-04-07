@@ -1,3 +1,5 @@
+from rest_framework import status
+
 from .serializers import BookSerializer
 from ..models import Book
 from rest_framework.response import Response
@@ -23,23 +25,33 @@ def book_list(request):
 @api_view(['GET', 'PUT', 'DELETE'])
 def book_search(request, pk):
     if request.method == 'GET':
-        book = Book.objects.get(pk=pk)
-        serializer = BookSerializer(book)
-        return Response(serializer.data)
+        try:
+            book = Book.objects.get(pk=pk)
+            serializer = BookSerializer(book)
+            return Response(serializer.data)
+        except Book.DoesNotExist:
+            return Response({'msg': 'Do not exist Item'}, status=status.HTTP_204_NO_CONTENT)
 
     if request.method == 'PUT':
-        book = Book.objects.get(pk=pk)
-        obj_serializer = BookSerializer(book, data=request.data)
-        if obj_serializer.is_valid():
-            obj_serializer.save()
-            return Response(obj_serializer.data)
-        else:
-            return Response(obj_serializer.errors)
+        try:
+            book = Book.objects.get(pk=pk)
+            obj_serializer = BookSerializer(book, data=request.data)
+            if obj_serializer.is_valid():
+                obj_serializer.save()
+                return Response(obj_serializer.data)
+            else:
+                return Response(obj_serializer.errors, status=status.HTTP_404_NOT_FOUND)
+        except Book.DoesNotExist:
+            return Response({'msg': 'Book doesn\'t exist'}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'DELETE':
-        book = Book.objects.get(pk=pk)
-        book.delete()
-        return Response({'result': True})
+        try:
+            book = Book.objects.get(pk=pk)
+            book.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Book.DoesNotExist:
+            return Response({'msg': 'Book doesn\'t exist'}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 
